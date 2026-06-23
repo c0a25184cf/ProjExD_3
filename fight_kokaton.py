@@ -157,6 +157,31 @@ class Score:
         screen.blit(self.img, self.rct)
 
 
+class Explosion:
+    """
+    爆発エフェクトに関するクラス
+    """
+    def __init__(self, bomb: Bomb):
+        """
+        爆弾が爆発した際のエフェクトを生成する
+        引数 bomb：爆発した爆弾（Bombインスタンス）
+        """
+        img = pg.image.load("fig/explosion.gif")
+        self.imgs = [img, pg.transform.flip(img, True, True)]
+        self.img = self.imgs[0]
+        self.rct = self.img.get_rect()
+        self.rct.center = bomb.rct.center  
+        self.life = 20  
+    def update(self, screen: pg.Surface):
+        """
+        爆発時間を減算し、画像を切り替えながら画面に描画する
+        引数 screen：画面Surface
+        """
+        self.life -= 1
+        self.img = self.imgs[self.life // 10 % 2]
+        screen.blit(self.img, self.rct)
+
+
 def main():
     pg.display.set_caption("たたかえ！こうかとん")
     screen = pg.display.set_mode((WIDTH, HEIGHT))    
@@ -166,6 +191,7 @@ def main():
 
     score = Score()
     beams = []  
+    exps = []
 
     clock = pg.time.Clock()
     tmr = 0
@@ -185,13 +211,15 @@ def main():
             for j, beam in enumerate(beams):
                 if beam is not None and bomb is not None:
                     if beam.rct.colliderect(bomb.rct):  
-                        bird.change_img(6, screen)  
+                        bird.change_img(6, screen) 
+                        exps.append(Explosion(bomb)) 
                         beams[j] = None  
                         bombs[i] = None  
                         score.value += 1
 
         bombs = [bomb for bomb in bombs if bomb is not None]
         beams = [beam for beam in beams if beam is not None and check_bound(beam.rct) == (True, True)]
+        exps = [exp for exp in exps if exp.life > 0]
 
         for bomb in bombs:
             if bird.rct.colliderect(bomb.rct):
@@ -207,7 +235,9 @@ def main():
             beam.update(screen)   
         for bomb in bombs:
             bomb.update(screen)
-            
+        for exp in exps:  
+            exp.update(screen)
+
         # スコアの表示
         score.update(screen)  
         
